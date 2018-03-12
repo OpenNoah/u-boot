@@ -318,6 +318,14 @@ DEBUG_UART_FUNCS
 #endif
 
 #ifdef CONFIG_DM_SERIAL
+#if CONFIG_IS_ENABLED(OF_CONTROL)
+enum {
+	PORT_NS16550 = 0,
+	PORT_JZ4780,
+	PORT_JZ4740,
+};
+#endif
+
 static int ns16550_serial_putc(struct udevice *dev, const char ch)
 {
 	struct NS16550 *const com_port = dev_get_priv(dev);
@@ -362,9 +370,12 @@ static int ns16550_serial_setbrg(struct udevice *dev, int baudrate)
 {
 	struct NS16550 *const com_port = dev_get_priv(dev);
 	struct ns16550_platdata *plat = com_port->plat;
+	const u32 port_type = dev_get_driver_data(dev);
 	int clock_divisor;
 
 	clock_divisor = ns16550_calc_divisor(com_port, plat->clock, baudrate);
+	if (port_type == PORT_JZ4740)
+		clock_divisor--;
 
 	NS16550_setbrg(com_port, clock_divisor);
 
@@ -380,13 +391,6 @@ int ns16550_serial_probe(struct udevice *dev)
 
 	return 0;
 }
-
-#if CONFIG_IS_ENABLED(OF_CONTROL)
-enum {
-	PORT_NS16550 = 0,
-	PORT_JZ4780,
-};
-#endif
 
 #if CONFIG_IS_ENABLED(OF_CONTROL) && !CONFIG_IS_ENABLED(OF_PLATDATA)
 int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
@@ -459,7 +463,7 @@ int ns16550_serial_ofdata_to_platdata(struct udevice *dev)
 	}
 
 	plat->fcr = UART_FCR_DEFVAL;
-	if (port_type == PORT_JZ4780)
+	if (port_type == PORT_JZ4780 || port_type == PORT_JZ4740)
 		plat->fcr |= UART_FCR_UME;
 
 	return 0;
@@ -483,6 +487,7 @@ static const struct udevice_id ns16550_serial_ids[] = {
 	{ .compatible = "ns16550",		.data = PORT_NS16550 },
 	{ .compatible = "ns16550a",		.data = PORT_NS16550 },
 	{ .compatible = "ingenic,jz4780-uart",	.data = PORT_JZ4780  },
+	{ .compatible = "ingenic,jz4740-uart",	.data = PORT_JZ4740  },
 	{ .compatible = "nvidia,tegra20-uart",	.data = PORT_NS16550 },
 	{ .compatible = "snps,dw-apb-uart",	.data = PORT_NS16550 },
 	{ .compatible = "ti,omap2-uart",	.data = PORT_NS16550 },
