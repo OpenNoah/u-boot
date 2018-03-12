@@ -243,6 +243,7 @@ int NS16550_tstc(NS16550_t com_port)
 
 static inline void _debug_uart_init(void)
 {
+#ifndef CONFIG_DEBUG_UART_SKIP_INIT
 	struct NS16550 *com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
 	int baud_divisor;
 
@@ -262,6 +263,7 @@ static inline void _debug_uart_init(void)
 	serial_dout(&com_port->dll, baud_divisor & 0xff);
 	serial_dout(&com_port->dlm, (baud_divisor >> 8) & 0xff);
 	serial_dout(&com_port->lcr, UART_LCRVAL);
+#endif
 }
 
 static inline void _debug_uart_putc(int ch)
@@ -283,6 +285,7 @@ DEBUG_UART_FUNCS
 
 static inline void _debug_uart_init(void)
 {
+#ifndef CONFIG_DEBUG_UART_SKIP_INIT
 	struct NS16550 *com_port = (struct NS16550 *)CONFIG_DEBUG_UART_BASE;
 	int baud_divisor;
 
@@ -298,6 +301,7 @@ static inline void _debug_uart_init(void)
 	serial_dout(&com_port->dlm, (baud_divisor >> 8) & 0xff);
 	serial_dout(&com_port->lcr, UART_LCRVAL);
 	serial_dout(&com_port->mdr1, 0x0);
+#endif
 }
 
 static inline void _debug_uart_putc(int ch)
